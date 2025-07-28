@@ -50,6 +50,9 @@ const GenerateShoppingListOutputSchema = ShoppingListSchema
 export type GenerateShoppingListOutput = z.infer<typeof GenerateShoppingListOutputSchema>;
 
 
+// This flow is no longer used. The shopping list is now generated on the client.
+// We are keeping the file for reference, but it is not included in the Genkit dev server.
+/*
 export async function generateShoppingList(input: GenerateShoppingListInput): Promise<GenerateShoppingListOutput> {
   return generateShoppingListFlow(input);
 }
@@ -103,3 +106,4 @@ const generateShoppingListFlow = ai.defineFlow(
     return output!;
   }
 );
+*/

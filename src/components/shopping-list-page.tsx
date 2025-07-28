@@ -2,15 +2,23 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShoppingCart, Zap, Loader2 } from 'lucide-react';
+import { ShoppingCart, Zap, Loader2, RefreshCw } from 'lucide-react';
 import { useAppContext } from '@/context/app-context';
-import { generateShoppingList, GenerateShoppingListInput, GenerateShoppingListOutput } from '@/ai/flows/generate-shopping-list';
 import { useToast } from '@/hooks/use-toast';
 
+type ShoppingListItem = {
+    name: string;
+    quantity: number;
+    unit: string;
+};
+
+type ShoppingList = Record<string, ShoppingListItem[]>;
+
+
 const ShoppingListPage = () => {
-    const { schedule, recipes, ingredients } = useAppContext();
+    const { schedule, recipes, getIngredientById } = useAppContext();
     const { toast } = useToast();
-    const [shoppingList, setShoppingList] = useState<GenerateShoppingListOutput | null>(null);
+    const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleGenerateList = async () => {
@@ -18,41 +26,50 @@ const ShoppingListPage = () => {
         setShoppingList(null);
 
         try {
-            const weeklyScheduleForAI: GenerateShoppingListInput['weeklySchedule'] = schedule.map(day => {
-                return {
-                    dayOfWeek: day.dayOfWeek,
-                    meals: day.meals
-                        .filter(meal => meal.recipeId)
-                        .map(meal => {
-                            const recipe = recipes.find(r => r.id === meal.recipeId);
-                            if (!recipe) {
-                                return null;
-                            }
-                            
-                            return {
-                                mealType: meal.mealType,
-                                recipe: {
-                                    name: recipe.name,
-                                    ingredients: recipe.ingredients.map(recipeIngredient => {
-                                        const ingredient = ingredients.find(i => i.id === recipeIngredient.ingredientId);
-                                        return {
-                                            ingredient: {
-                                                name: ingredient?.name || 'Unknown',
-                                                unit: ingredient?.unit || 'unit',
-                                                market: ingredient?.market || 'Unknown Market'
-                                            },
-                                            quantity: recipeIngredient.quantity
-                                        };
-                                    }).filter(i => i.ingredient.name !== 'Unknown')
-                                }
-                            };
-                        }).filter((meal): meal is NonNullable<typeof meal> => meal !== null)
-                };
-            });
+            // Simulate a short delay for better UX
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const aggregatedIngredients: Record<string, { name: string; quantity: number; unit: string; market: string; }> = {};
 
-            const input: GenerateShoppingListInput = { weeklySchedule: weeklyScheduleForAI };
-            const result = await generateShoppingList(input);
-            setShoppingList(result);
+            for (const day of schedule) {
+                for (const meal of day.meals) {
+                    if (meal.recipeId) {
+                        const recipe = recipes.find(r => r.id === meal.recipeId);
+                        if (recipe) {
+                            for (const recipeIngredient of recipe.ingredients) {
+                                const ingredientDetails = getIngredientById(recipeIngredient.ingredientId);
+                                if (ingredientDetails) {
+                                    if (aggregatedIngredients[ingredientDetails.id]) {
+                                        aggregatedIngredients[ingredientDetails.id].quantity += recipeIngredient.quantity;
+                                    } else {
+                                        aggregatedIngredients[ingredientDetails.id] = {
+                                            name: ingredientDetails.name,
+                                            quantity: recipeIngredient.quantity,
+                                            unit: ingredientDetails.unit,
+                                            market: ingredientDetails.market,
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const groupedByMarket: ShoppingList = {};
+            for (const ingredient of Object.values(aggregatedIngredients)) {
+                if (!groupedByMarket[ingredient.market]) {
+                    groupedByMarket[ingredient.market] = [];
+                }
+                groupedByMarket[ingredient.market].push({
+                    name: ingredient.name,
+                    quantity: ingredient.quantity,
+                    unit: ingredient.unit,
+                });
+            }
+            
+            setShoppingList(groupedByMarket);
+
             toast({
                 title: 'Shopping List Generated!',
                 description: 'Your shopping list is ready.',
@@ -75,7 +92,7 @@ const ShoppingListPage = () => {
             <div className="flex flex-col items-center text-center mb-8">
                 <h1 className="text-3xl font-bold font-headline mb-2">Shopping List Generator</h1>
                 <p className="text-muted-foreground max-w-2xl">
-                    Automatically create a consolidated shopping list from your weekly meal schedule. Our AI assistant will group all the necessary ingredients by market for your convenience.
+                    Automatically create a consolidated shopping list from your weekly meal schedule. All the necessary ingredients will be grouped by market for your convenience.
                 </p>
                 <Button 
                     onClick={handleGenerateList} 
@@ -87,15 +104,15 @@ const ShoppingListPage = () => {
                     {isLoading ? (
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     ) : (
-                        <Zap className="mr-2 h-5 w-5" />
+                        <RefreshCw className="mr-2 h-5 w-5" />
                     )}
-                    {isLoading ? 'Generating...' : 'Generate with AI'}
+                    {isLoading ? 'Generating...' : 'Generate Shopping List'}
                 </Button>
             </div>
 
             {shoppingList ? (
                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {Object.entries(shoppingList).map(([market, items]) => (
+                    {Object.keys(shoppingList).length > 0 ? Object.entries(shoppingList).map(([market, items]) => (
                         <Card key={market}>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -114,7 +131,14 @@ const ShoppingListPage = () => {
                                 </ul>
                             </CardContent>
                         </Card>
-                    ))}
+                    )) : (
+                        <Card className="md:col-span-2 lg:col-span-3 text-center py-12 border-dashed">
+                            <CardContent>
+                                <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                <p className="text-muted-foreground">Your schedule is empty. Add some recipes to your meals to generate a shopping list.</p>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             ) : (
                 !isLoading && (
