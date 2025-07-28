@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShoppingCart, RefreshCw, Loader2 } from 'lucide-react';
@@ -8,27 +8,23 @@ import { useAppContext } from '@/context/app-context';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-
-type ShoppingListItem = {
-    name: string;
-    quantity: number;
-    unit: string;
-};
-
-type ShoppingList = Record<string, ShoppingListItem[]>;
+import { ShoppingList } from '@/lib/types';
 
 
 const ShoppingListPage = () => {
-    const { schedule, recipes, getIngredientById } = useAppContext();
+    const { 
+        schedule, 
+        recipes, 
+        getIngredientById, 
+        shoppingList, 
+        checkedItems, 
+        setShoppingListData 
+    } = useAppContext();
     const { toast } = useToast();
-    const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
     const handleGenerateList = async () => {
         setIsLoading(true);
-        setShoppingList(null);
-        setCheckedItems({}); // Reset checked items on new list generation
 
         try {
             // Simulate a short delay for better UX
@@ -74,7 +70,7 @@ const ShoppingListPage = () => {
                 });
             }
             
-            setShoppingList(groupedByMarket);
+            await setShoppingListData(groupedByMarket, {});
 
             toast({
                 title: 'Shopping List Generated!',
@@ -92,8 +88,9 @@ const ShoppingListPage = () => {
         }
     };
     
-    const handleCheckChange = (id: string, isChecked: boolean) => {
-        setCheckedItems(prev => ({ ...prev, [id]: isChecked }));
+    const handleCheckChange = async (id: string, isChecked: boolean) => {
+        const newCheckedItems = { ...checkedItems, [id]: isChecked };
+        await setShoppingListData(shoppingList, newCheckedItems);
     };
 
 
@@ -116,7 +113,7 @@ const ShoppingListPage = () => {
                     ) : (
                         <RefreshCw className="mr-2 h-5 w-5" />
                     )}
-                    {isLoading ? 'Generating...' : 'Generate Shopping List'}
+                    {isLoading ? 'Generating...' : 'Generate New Shopping List'}
                 </Button>
             </div>
 

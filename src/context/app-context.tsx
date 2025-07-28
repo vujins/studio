@@ -1,9 +1,9 @@
 'use client';
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import type { Ingredient, Recipe, WeeklySchedule, DayOfWeek, MealType, DaySchedule } from '@/lib/types';
+import type { Ingredient, Recipe, WeeklySchedule, DayOfWeek, MealType, DaySchedule, ShoppingList, ShoppingListData } from '@/lib/types';
 import { useCollection } from '@/hooks/use-firestore';
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, setDoc } from 'firebase/firestore';
 import { DAYS_OF_WEEK, MEAL_TYPES } from '@/lib/types';
 
 // --- CONTEXT DEFINITION ---
@@ -11,6 +11,8 @@ interface AppContextType {
   ingredients: Ingredient[];
   recipes: Recipe[];
   schedule: WeeklySchedule;
+  shoppingList: ShoppingList | null;
+  checkedItems: Record<string, boolean>;
   addIngredient: (ingredient: Omit<Ingredient, 'id'>) => Promise<string | undefined>;
   updateIngredient: (ingredient: Ingredient) => Promise<void>;
   deleteIngredient: (ingredientId: string) => Promise<void>;
@@ -20,6 +22,7 @@ interface AppContextType {
   updateSchedule: (day: DayOfWeek, mealType: MealType, recipeId: string | null) => Promise<void>;
   getIngredientById: (id: string) => Ingredient | undefined;
   getRecipeById: (id: string) => Recipe | undefined;
+  setShoppingListData: (shoppingList: ShoppingList | null, checkedItems: Record<string, boolean>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -29,6 +32,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { data: ingredients, add: addIngredient, update: updateIngredientDoc, remove: removeIngredient } = useCollection<Ingredient>('ingredients');
   const { data: recipes, add: addRecipe, update: updateRecipeDoc, remove: removeRecipe } = useCollection<Recipe>('recipes');
   const { data: scheduleData, update: updateScheduleDoc, setData: setScheduleData, loading: scheduleLoading } = useCollection<DaySchedule>('schedule');
+  const { data: shoppingListData, update: updateShoppingListDoc, loading: shoppingListLoading } = useCollection<ShoppingListData>('shopping-list');
+  
+  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const initializeSchedule = async () => {
@@ -55,6 +62,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     initializeSchedule();
   }, [scheduleData, scheduleLoading, setScheduleData]);
+
+  useEffect(() => {
+    if (!shoppingListLoading) {
+      const storedData = shoppingListData.find(item => item.id === 'current');
+      if (storedData) {
+        setShoppingList(storedData.list);
+        setCheckedItems(storedData.checkedItems || {});
+      }
+    }
+  }, [shoppingListData, shoppingListLoading]);
 
 
   const weeklySchedule: WeeklySchedule = DAYS_OF_WEEK.map(day => {
@@ -128,11 +145,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getIngredientById = (id: string) => ingredients.find(ing => ing.id === id);
   const getRecipeById = (id: string) => recipes.find(rec => rec.id === id);
 
+  const setShoppingListData = async (list: ShoppingList | null, checked: Record<string, boolean>) => {
+    setShoppingList(list);
+    setCheckedItems(checked);
+    const docRef = doc(db, "shopping-list", "current");
+    const dataToSet = {
+        list: list || {},
+        checkedItems: checked || {}
+    };
+    await setDoc(docRef, dataToSet, { merge: true });
+  }
+
 
   const value: AppContextType = {
     ingredients,
     recipes,
     schedule: weeklySchedule,
+    shoppingList,
+    checkedItems,
     addIngredient,
     updateIngredient,
     deleteIngredient,
@@ -142,6 +172,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateSchedule,
     getIngredientById,
     getRecipeById,
+    setShoppingListData
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

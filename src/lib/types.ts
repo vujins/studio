@@ -36,3 +36,17 @@ export type DaySchedule = {
 export const DAYS_OF_WEEK: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export type WeeklySchedule = DaySchedule[];
+
+export type ShoppingListItem = {
+    name: string;
+    quantity: number;
+    unit: string;
+};
+
+export type ShoppingList = Record<string, ShoppingListItem[]>;
+
+export type ShoppingListData = {
+    id: string;
+    list: ShoppingList;
+    checkedItems: Record<string, boolean>;
+}
