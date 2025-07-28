@@ -92,12 +92,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const deleteIngredient = (ingredientId: string) => {
-    setIngredients(prev => prev.filter(i => i.id !== ingredientId));
     // Also remove this ingredient from any recipes that use it.
-    setRecipes(prevRecipes => prevRecipes.map(r => ({
-      ...r,
-      ingredients: r.ingredients.filter(i => i.ingredientId !== ingredientId)
-    })));
+    const updatedRecipes = recipes.map(recipe => ({
+        ...recipe,
+        ingredients: recipe.ingredients.filter(ing => ing.ingredientId !== ingredientId),
+    }));
+    setRecipes(updatedRecipes);
+    setIngredients(prev => prev.filter(i => i.id !== ingredientId));
   }
 
   const addRecipe = (recipe: Omit<Recipe, 'id'>) => {
