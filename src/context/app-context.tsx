@@ -1,9 +1,9 @@
 'use client';
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
-import type { Ingredient, Recipe, WeeklySchedule, DayOfWeek, MealType } from '@/lib/types';
+import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import type { Ingredient, Recipe, WeeklySchedule, DayOfWeek, MealType, DaySchedule } from '@/lib/types';
 import { useCollection } from '@/hooks/use-firestore';
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs } from 'firebase/firestore';
 import { DAYS_OF_WEEK, MEAL_TYPES } from '@/lib/types';
 
 // --- CONTEXT DEFINITION ---
@@ -11,10 +11,10 @@ interface AppContextType {
   ingredients: Ingredient[];
   recipes: Recipe[];
   schedule: WeeklySchedule;
-  addIngredient: (ingredient: Omit<Ingredient, 'id'>) => Promise<void>;
+  addIngredient: (ingredient: Omit<Ingredient, 'id'>) => Promise<string | undefined>;
   updateIngredient: (ingredient: Ingredient) => Promise<void>;
   deleteIngredient: (ingredientId: string) => Promise<void>;
-  addRecipe: (recipe: Omit<Recipe, 'id'>) => Promise<void>;
+  addRecipe: (recipe: Omit<Recipe, 'id'>) => Promise<string | undefined>;
   updateRecipe: (recipe: Recipe) => Promise<void>;
   deleteRecipe: (recipeId: string) => Promise<void>;
   updateSchedule: (day: DayOfWeek, mealType: MealType, recipeId: string | null) => Promise<void>;
@@ -28,13 +28,15 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { data: ingredients, add: addIngredient, update: updateIngredientDoc, remove: removeIngredient } = useCollection<Ingredient>('ingredients');
   const { data: recipes, add: addRecipe, update: updateRecipeDoc, remove: removeRecipe } = useCollection<Recipe>('recipes');
-  const { data: schedule, update: updateScheduleDoc, setData: setSchedule } = useCollection<DaySchedule>('schedule');
+  const { data: scheduleData, update: updateScheduleDoc, setData: setScheduleData, loading: scheduleLoading } = useCollection<DaySchedule>('schedule');
 
   useEffect(() => {
     const initializeSchedule = async () => {
-        if (schedule.length === 0) {
+        // Only initialize if the fetch has completed and the schedule is empty.
+        if (!scheduleLoading && scheduleData.length === 0) {
+            console.log("Initializing schedule in Firestore...");
             const batch = writeBatch(db);
-            const initialSchedule = DAYS_OF_WEEK.map(day => {
+            const initialSchedule: DaySchedule[] = DAYS_OF_WEEK.map(day => {
                 const daySchedule: DaySchedule = {
                     id: day,
                     dayOfWeek: day,
@@ -48,18 +50,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 return daySchedule;
             });
             await batch.commit();
-            setSchedule(initialSchedule);
+            setScheduleData(initialSchedule); // Update local state after writing to Firestore
         }
     };
     initializeSchedule();
-  }, [schedule, setSchedule]);
+  }, [scheduleData, scheduleLoading, setScheduleData]);
 
 
-  const weeklySchedule = DAYS_OF_WEEK.map(day => {
-    const daySchedule = schedule.find(s => s.id === day);
-    if (daySchedule) {
-      return daySchedule;
+  const weeklySchedule: WeeklySchedule = DAYS_OF_WEEK.map(day => {
+    const foundDay = scheduleData.find(s => s.dayOfWeek === day);
+    if (foundDay) {
+      return foundDay;
     }
+    // Return a default structure if data is not yet loaded or found
     return {
       id: day,
       dayOfWeek: day,
@@ -76,8 +79,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteIngredient = async (ingredientId: string) => {
-    await removeIngredient(ingredientId);
-    // Also remove this ingredient from any recipes that use it.
+    // Before deleting the ingredient, remove it from all recipes
     const batch = writeBatch(db);
     recipes.forEach(recipe => {
         const newIngredients = recipe.ingredients.filter(ing => ing.ingredientId !== ingredientId);
@@ -87,6 +89,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     });
     await batch.commit();
+
+    // Now delete the ingredient itself
+    await removeIngredient(ingredientId);
   }
 
   const updateRecipe = async (recipe: Recipe) => {
@@ -94,26 +99,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const deleteRecipe = async (recipeId: string) => {
-    await removeRecipe(recipeId);
-    // Also remove this recipe from the schedule
+    // Before deleting the recipe, remove it from the schedule
     const batch = writeBatch(db);
-    schedule.forEach(daySchedule => {
+    scheduleData.forEach(daySchedule => {
         const newMeals = daySchedule.meals.map(meal => meal.recipeId === recipeId ? { ...meal, recipeId: null } : meal);
+        // Check if a change actually happened before adding to batch
         if (JSON.stringify(newMeals) !== JSON.stringify(daySchedule.meals)) {
             const scheduleRef = doc(db, "schedule", daySchedule.id);
             batch.update(scheduleRef, { meals: newMeals });
         }
     });
     await batch.commit();
+    
+    // Now delete the recipe itself
+    await removeRecipe(recipeId);
   }
 
   const updateSchedule = async (day: DayOfWeek, mealType: MealType, recipeId: string | null) => {
-    const daySchedule = schedule.find(ds => ds.dayOfWeek === day);
+    const daySchedule = scheduleData.find(ds => ds.dayOfWeek === day);
     if (daySchedule) {
         const newMeals = daySchedule.meals.map(meal =>
             meal.mealType === mealType ? { ...meal, recipeId } : meal
         );
-        await updateScheduleDoc(daySchedule.id, { ...daySchedule, meals: newMeals });
+        await updateScheduleDoc(daySchedule.id, { meals: newMeals });
     }
   };
   
