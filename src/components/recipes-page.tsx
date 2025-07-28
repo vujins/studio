@@ -5,25 +5,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { PlusCircle, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Clock, BarChart } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/context/app-context';
-import type { Recipe, RecipeIngredient } from '@/lib/types';
+import type { Recipe, RecipeIngredient, RecipeDifficulty } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { RECIPE_DIFFICULTIES } from '@/lib/types';
 
 
 const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => void, recipeToEdit?: Recipe | null }) => {
   const { ingredients, addRecipe, updateRecipe, getIngredientById } = useAppContext();
   const { toast } = useToast();
   const [recipeName, setRecipeName] = useState(recipeToEdit?.name || '');
+  const [description, setDescription] = useState(recipeToEdit?.description || '');
+  const [cookingTime, setCookingTime] = useState(recipeToEdit?.cookingTime || 0);
+  const [difficulty, setDifficulty] = useState<RecipeDifficulty>(recipeToEdit?.difficulty || 'Easy');
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(recipeToEdit?.ingredients || []);
 
   useEffect(() => {
     if (recipeToEdit) {
       setRecipeName(recipeToEdit.name);
+      setDescription(recipeToEdit.description || '');
+      setCookingTime(recipeToEdit.cookingTime || 0);
+      setDifficulty(recipeToEdit.difficulty || 'Easy');
       setRecipeIngredients(recipeToEdit.ingredients);
     } else {
       setRecipeName('');
+      setDescription('');
+      setCookingTime(0);
+      setDifficulty('Easy');
       setRecipeIngredients([]);
     }
   }, [recipeToEdit])
@@ -50,7 +61,13 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (recipeName && recipeIngredients.length > 0 && recipeIngredients.every(ing => ing.ingredientId && ing.quantity > 0)) {
-      const recipeData = { name: recipeName, ingredients: recipeIngredients };
+      const recipeData = { 
+        name: recipeName, 
+        description,
+        cookingTime,
+        difficulty,
+        ingredients: recipeIngredients,
+      };
       try {
         if (recipeToEdit) {
             await updateRecipe({ ...recipeToEdit, ...recipeData });
@@ -90,6 +107,31 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
             Name
           </Label>
           <Input id="recipe-name" value={recipeName} onChange={e => setRecipeName(e.target.value)} className="col-span-3" placeholder="e.g., Healthy Salad" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="description" className="text-right">
+            Description
+          </Label>
+          <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" placeholder="A short description of the recipe" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="cooking-time" className="text-right">
+            Time (mins)
+          </Label>
+          <Input id="cooking-time" type="number" value={cookingTime || ''} onChange={e => setCookingTime(Number(e.target.value))} className="col-span-3" placeholder="e.g., 30" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="difficulty" className="text-right">
+            Difficulty
+          </Label>
+          <Select onValueChange={(val: RecipeDifficulty) => setDifficulty(val)} value={difficulty}>
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Select difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              {RECIPE_DIFFICULTIES.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="col-span-4">
@@ -191,19 +233,29 @@ const RecipesPage = () => {
                             <Card key={recipe.id} className="flex flex-col">
                                 <CardHeader>
                                     <CardTitle>{recipe.name}</CardTitle>
-                                    <CardDescription>Ingredients</CardDescription>
+                                    <CardDescription>{recipe.description || 'No description'}</CardDescription>
                                 </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <ul className="space-y-1 text-sm list-disc pl-5">
-                                        {recipe.ingredients.map(ing => {
-                                            const ingredientDetails = getIngredientById(ing.ingredientId);
-                                            return (
-                                                <li key={ing.ingredientId}>
-                                                    {ing.quantity} {ingredientDetails?.unit} {ingredientDetails?.name || 'Unknown Ingredient'}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
+                                <CardContent className="flex-grow space-y-4">
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-2">Details</h4>
+                                        <div className="flex items-center text-sm text-muted-foreground gap-4">
+                                            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {recipe.cookingTime || '?'} min</span>
+                                            <span className="flex items-center gap-1.5"><BarChart className="w-4 h-4" /> {recipe.difficulty}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-2">Ingredients</h4>
+                                        <ul className="space-y-1 text-sm list-disc pl-5">
+                                            {recipe.ingredients.map(ing => {
+                                                const ingredientDetails = getIngredientById(ing.ingredientId);
+                                                return (
+                                                    <li key={ing.ingredientId}>
+                                                        {ing.quantity} {ingredientDetails?.unit} {ingredientDetails?.name || 'Unknown Ingredient'}
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
                                 </CardContent>
                                 <CardFooter className="flex justify-end gap-2">
                                     <Button variant="ghost" size="icon" onClick={() => handleEdit(recipe)}>

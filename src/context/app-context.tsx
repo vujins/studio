@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import type { Ingredient, Recipe, WeeklySchedule, DayOfWeek, MealType, DaySchedule, ShoppingList, ShoppingListData } from '@/lib/types';
+import type { Ingredient, Recipe, WeeklySchedule, DayOfWeek, MealType, DaySchedule, ShoppingList, ShoppingListData, RecipeDifficulty } from '@/lib/types';
 import { useCollection } from '@/hooks/use-firestore';
 import { db } from '@/lib/firebase';
 import { collection, doc, writeBatch, getDocs, setDoc } from 'firebase/firestore';

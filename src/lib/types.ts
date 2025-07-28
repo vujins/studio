@@ -10,9 +10,15 @@ export type RecipeIngredient = {
   quantity: number;
 };
 
+export type RecipeDifficulty = 'Easy' | 'Medium' | 'Hard';
+export const RECIPE_DIFFICULTIES: RecipeDifficulty[] = ['Easy', 'Medium', 'Hard'];
+
 export type Recipe = {
   id: string;
   name: string;
+  description: string;
+  cookingTime: number; // in minutes
+  difficulty: RecipeDifficulty;
   ingredients: RecipeIngredient[];
 };
 
