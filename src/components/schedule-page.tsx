@@ -62,6 +62,7 @@ const RecipeCombobox = ({ day, mealType, recipeId }: { day: DayOfWeek, mealType:
                         <CommandEmpty>No recipe found.</CommandEmpty>
                         <CommandGroup>
                              <CommandItem
+                                value="none"
                                 onSelect={() => handleRecipeChange(null)}
                                 className="cursor-pointer"
                             >
