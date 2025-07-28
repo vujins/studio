@@ -11,6 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import { MEAL_TYPES, DAYS_OF_WEEK } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Label } from '@/components/ui/label';
 
 
 const RecipeCombobox = ({ day, mealType, recipeId }: { day: DayOfWeek, mealType: MealType, recipeId: string | null }) => {
