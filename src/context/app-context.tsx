@@ -20,6 +20,7 @@ interface AppContextType {
   updateRecipe: (recipe: Recipe) => Promise<void>;
   deleteRecipe: (recipeId: string) => Promise<void>;
   updateSchedule: (day: DayOfWeek, mealType: MealType, recipeId: string | null) => Promise<void>;
+  clearSchedule: () => Promise<void>;
   getIngredientById: (id: string) => Ingredient | undefined;
   getRecipeById: (id: string) => Recipe | undefined;
   setShoppingListData: (shoppingList: ShoppingList | null, checkedItems: Record<string, boolean>) => Promise<void>;
@@ -141,6 +142,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         await updateScheduleDoc(daySchedule.id, { meals: newMeals });
     }
   };
+
+  const clearSchedule = async () => {
+    const batch = writeBatch(db);
+    DAYS_OF_WEEK.forEach(day => {
+      const scheduleDocRef = doc(db, "schedule", day);
+      const clearedMeals = MEAL_TYPES.map(mealType => ({
+        mealType: mealType,
+        recipeId: null,
+      }));
+      batch.update(scheduleDocRef, { meals: clearedMeals });
+    });
+    await batch.commit();
+  };
   
   const getIngredientById = (id: string) => ingredients.find(ing => ing.id === id);
   const getRecipeById = (id: string) => recipes.find(rec => rec.id === id);
@@ -170,6 +184,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateRecipe,
     deleteRecipe,
     updateSchedule,
+    clearSchedule,
     getIngredientById,
     getRecipeById,
     setShoppingListData
