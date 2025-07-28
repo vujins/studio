@@ -12,6 +12,8 @@ import type { Recipe, RecipeIngredient, RecipeDifficulty } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { RECIPE_DIFFICULTIES } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => void, recipeToEdit?: Recipe | null }) => {
@@ -101,79 +103,88 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="recipe-name" className="text-right">
-            Name
-          </Label>
-          <Input id="recipe-name" value={recipeName} onChange={e => setRecipeName(e.target.value)} className="col-span-3" placeholder="e.g., Healthy Salad" />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="cooking-time" className="text-right">
-            Time (mins)
-          </Label>
-          <Input id="cooking-time" type="number" value={cookingTime || ''} onChange={e => setCookingTime(Number(e.target.value))} className="col-span-3" placeholder="e.g., 30" />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="difficulty" className="text-right">
-            Difficulty
-          </Label>
-          <Select onValueChange={(val: RecipeDifficulty) => setDifficulty(val)} value={difficulty}>
-            <SelectTrigger className="col-span-3">
-              <SelectValue placeholder="Select difficulty" />
-            </SelectTrigger>
-            <SelectContent>
-              {RECIPE_DIFFICULTIES.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="col-span-4">
-          <Label htmlFor="description">
-            Description
-          </Label>
-          <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A short description of the recipe" />
-        </div>
-        
-        <div className="col-span-4">
-          <Label>Ingredients</Label>
-          <div className="space-y-2 mt-2 max-h-60 overflow-y-auto pr-2">
-            {recipeIngredients.map((ing, index) => (
-                <div key={index} className="flex items-center gap-2">
-                    <Select onValueChange={(val) => handleIngredientChange(index, 'ingredientId', val)} value={ing.ingredientId}>
-                        <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select ingredient" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {ingredients.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <Input 
-                        type="number"
-                        value={ing.quantity || ''}
-                        onChange={e => handleIngredientChange(index, 'quantity', Number(e.target.value))}
-                        className="w-24"
-                        placeholder="Qty"
-                    />
-                    <span className="text-sm text-muted-foreground w-16">{getIngredientById(ing.ingredientId)?.unit || 'unit'}</span>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveIngredient(index)}>
-                        <Trash2 className="h-4 w-4" />
+        <ScrollArea className="h-[60vh] pr-6">
+            <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Recipe Details</h3>
+                    <Separator />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="recipe-name">Recipe Name</Label>
+                        <Input id="recipe-name" value={recipeName} onChange={e => setRecipeName(e.target.value)} placeholder="e.g., Healthy Salad" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="cooking-time">Time (mins)</Label>
+                        <Input id="cooking-time" type="number" value={cookingTime || ''} onChange={e => setCookingTime(Number(e.target.value))} placeholder="e.g., 30" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="difficulty">Difficulty</Label>
+                        <Select onValueChange={(val: RecipeDifficulty) => setDifficulty(val)} value={difficulty}>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select difficulty" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {RECIPE_DIFFICULTIES.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A short description of the recipe" />
+                </div>
+                
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-medium">Ingredients</h3>
+                        <Separator />
+                    </div>
+                    <div className="space-y-4">
+                        {recipeIngredients.map((ing, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] items-end gap-2 p-2 border rounded-md relative">
+                                <div className="space-y-2">
+                                    <Label>Ingredient</Label>
+                                    <Select onValueChange={(val) => handleIngredientChange(index, 'ingredientId', val)} value={ing.ingredientId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select ingredient" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {ingredients.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Qty</Label>
+                                    <Input 
+                                        type="number"
+                                        value={ing.quantity || ''}
+                                        onChange={e => handleIngredientChange(index, 'quantity', Number(e.target.value))}
+                                        className="w-24"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="flex items-center h-10">
+                                    <span className="text-sm text-muted-foreground mr-2">{getIngredientById(ing.ingredientId)?.unit || 'unit'}</span>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveIngredient(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddIngredient} className="mt-2">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
                     </Button>
                 </div>
-            ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={handleAddIngredient} className="mt-2">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
-            </Button>
-        </div>
-
-      </div>
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="secondary">Cancel</Button>
-        </DialogClose>
-        <Button type="submit" style={{backgroundColor: 'var(--accent)', color: 'var(--accent-foreground)'}}>Save Recipe</Button>
-      </DialogFooter>
+        </ScrollArea>
+        <DialogFooter className="pt-6">
+            <DialogClose asChild>
+            <Button type="button" variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button type="submit" style={{backgroundColor: 'var(--accent)', color: 'var(--accent-foreground)'}}>Save Recipe</Button>
+        </DialogFooter>
     </form>
   );
 };
@@ -276,7 +287,7 @@ const RecipesPage = () => {
                         </CardContent>
                     </Card>
                 )}
-                 <DialogContent className="sm:max-w-lg">
+                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingRecipe ? 'Edit Recipe' : 'Create a New Recipe'}</DialogTitle>
                     </DialogHeader>
@@ -288,3 +299,5 @@ const RecipesPage = () => {
 };
 
 export default RecipesPage;
+
+    
