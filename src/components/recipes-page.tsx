@@ -17,11 +17,11 @@ import { RECIPE_DIFFICULTIES } from '@/lib/types';
 const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => void, recipeToEdit?: Recipe | null }) => {
   const { ingredients, addRecipe, updateRecipe, getIngredientById } = useAppContext();
   const { toast } = useToast();
-  const [recipeName, setRecipeName] = useState(recipeToEdit?.name || '');
-  const [description, setDescription] = useState(recipeToEdit?.description || '');
-  const [cookingTime, setCookingTime] = useState(recipeToEdit?.cookingTime || 0);
-  const [difficulty, setDifficulty] = useState<RecipeDifficulty>(recipeToEdit?.difficulty || 'Easy');
-  const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(recipeToEdit?.ingredients || []);
+  const [recipeName, setRecipeName] = useState('');
+  const [description, setDescription] = useState('');
+  const [cookingTime, setCookingTime] = useState(0);
+  const [difficulty, setDifficulty] = useState<RecipeDifficulty>('Easy');
+  const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
 
   useEffect(() => {
     if (recipeToEdit) {
