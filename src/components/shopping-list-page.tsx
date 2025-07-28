@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useAppContext } from '@/context/app-context';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 type ShoppingListItem = {
     name: string;
@@ -22,10 +23,12 @@ const ShoppingListPage = () => {
     const { toast } = useToast();
     const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
     const handleGenerateList = async () => {
         setIsLoading(true);
         setShoppingList(null);
+        setCheckedItems({}); // Reset checked items on new list generation
 
         try {
             // Simulate a short delay for better UX
@@ -41,10 +44,11 @@ const ShoppingListPage = () => {
                             for (const recipeIngredient of recipe.ingredients) {
                                 const ingredientDetails = getIngredientById(recipeIngredient.ingredientId);
                                 if (ingredientDetails) {
-                                    if (aggregatedIngredients[ingredientDetails.id]) {
-                                        aggregatedIngredients[ingredientDetails.id].quantity += recipeIngredient.quantity;
+                                    const key = `${ingredientDetails.market}-${ingredientDetails.name}`;
+                                    if (aggregatedIngredients[key]) {
+                                        aggregatedIngredients[key].quantity += recipeIngredient.quantity;
                                     } else {
-                                        aggregatedIngredients[ingredientDetails.id] = {
+                                        aggregatedIngredients[key] = {
                                             name: ingredientDetails.name,
                                             quantity: recipeIngredient.quantity,
                                             unit: ingredientDetails.unit,
@@ -87,6 +91,10 @@ const ShoppingListPage = () => {
             setIsLoading(false);
         }
     };
+    
+    const handleCheckChange = (id: string, isChecked: boolean) => {
+        setCheckedItems(prev => ({ ...prev, [id]: isChecked }));
+    };
 
 
     return (
@@ -124,15 +132,21 @@ const ShoppingListPage = () => {
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-3">
-                                    {items.map((item, index) => (
+                                    {items.map((item, index) => {
+                                        const itemId = `${market}-${item.name}`;
+                                        return (
                                         <li key={index} className="flex items-center space-x-3">
-                                            <Checkbox id={`${market}-${item.name}`} />
-                                            <Label htmlFor={`${market}-${item.name}`} className="flex justify-between items-center w-full">
+                                            <Checkbox 
+                                                id={itemId} 
+                                                checked={!!checkedItems[itemId]}
+                                                onCheckedChange={(checked) => handleCheckChange(itemId, !!checked)}
+                                            />
+                                            <Label htmlFor={itemId} className={cn("flex justify-between items-center w-full transition-colors", checkedItems[itemId] && "text-muted-foreground line-through")}>
                                                 <span>{item.name}</span>
                                                 <span className="font-mono text-sm bg-muted px-2 py-1 rounded-md">{item.quantity} {item.unit}</span>
                                             </Label>
                                         </li>
-                                    ))}
+                                    )})}
                                 </ul>
                             </CardContent>
                         </Card>
