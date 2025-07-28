@@ -28,6 +28,7 @@ export const MEAL_TYPES: MealType[] = ['Breakfast', 'Snack 1', 'Lunch', 'Snack 2
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
 
 export type DaySchedule = {
+  id: string; // Using DayOfWeek as ID for firestore
   dayOfWeek: DayOfWeek;
   meals: Meal[];
 };

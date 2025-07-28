@@ -47,24 +47,32 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
     setRecipeIngredients(newIngredients);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (recipeName && recipeIngredients.length > 0 && recipeIngredients.every(ing => ing.ingredientId && ing.quantity > 0)) {
       const recipeData = { name: recipeName, ingredients: recipeIngredients };
-      if (recipeToEdit) {
-        updateRecipe({ ...recipeToEdit, ...recipeData });
+      try {
+        if (recipeToEdit) {
+            await updateRecipe({ ...recipeToEdit, ...recipeData });
+            toast({
+            title: 'Recipe Updated!',
+            description: `"${recipeName}" has been updated.`,
+            });
+        } else {
+            await addRecipe(recipeData);
+            toast({
+            title: 'Recipe Added!',
+            description: `"${recipeName}" has been created.`,
+            });
+        }
+        setOpen(false);
+      } catch(error) {
         toast({
-          title: 'Recipe Updated!',
-          description: `"${recipeName}" has been updated.`,
-        });
-      } else {
-        addRecipe(recipeData);
-        toast({
-          title: 'Recipe Added!',
-          description: `"${recipeName}" has been created.`,
+            title: 'Error',
+            description: 'Could not save recipe. Please try again.',
+            variant: 'destructive',
         });
       }
-      setOpen(false);
     } else {
         toast({
             title: 'Error',
@@ -139,13 +147,21 @@ const RecipesPage = () => {
         setOpen(true);
     };
 
-    const handleDelete = (recipe: Recipe) => {
+    const handleDelete = async (recipe: Recipe) => {
         if (window.confirm(`Are you sure you want to delete ${recipe.name}?`)) {
-            deleteRecipe(recipe.id);
-            toast({
-                title: 'Recipe Deleted',
-                description: `${recipe.name} has been removed.`,
-            })
+            try {
+                await deleteRecipe(recipe.id);
+                toast({
+                    title: 'Recipe Deleted',
+                    description: `${recipe.name} has been removed.`,
+                })
+            } catch (error) {
+                toast({
+                    title: 'Error',
+                    description: `Could not delete ${recipe.name}. Please try again.`,
+                    variant: 'destructive',
+                })
+            }
         }
     };
     

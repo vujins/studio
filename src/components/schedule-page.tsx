@@ -9,20 +9,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAppContext } from '@/context/app-context';
-import type { DayOfWeek, MealType } from '@/lib/types';
+import type { DayOfWeek, MealType, DaySchedule } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 
 const SchedulePage = () => {
-  const { schedule, recipes, updateSchedule, getRecipeById } = useAppContext();
+  const { schedule, recipes, updateSchedule } = useAppContext();
   const { toast } = useToast();
 
-  const handleRecipeChange = (day: DayOfWeek, mealType: MealType, recipeId: string) => {
+  const handleRecipeChange = async (day: DayOfWeek, mealType: MealType, recipeId: string) => {
     const newRecipeId = recipeId === 'none' ? null : recipeId;
-    updateSchedule(day, mealType, newRecipeId);
-    toast({
-      title: "Schedule Updated",
-      description: `${mealType} on ${day} has been updated.`,
-    })
+    try {
+        await updateSchedule(day, mealType, newRecipeId);
+        toast({
+            title: "Schedule Updated",
+            description: `${mealType} on ${day} has been updated.`,
+        })
+    } catch(error) {
+        toast({
+            title: "Error",
+            description: `Could not update schedule. Please try again.`,
+            variant: "destructive",
+        })
+    }
   };
 
   return (
@@ -31,7 +39,7 @@ const SchedulePage = () => {
         <h1 className="text-2xl font-bold font-headline">Weekly Meal Schedule</h1>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {schedule.map((daySchedule) => (
+        {schedule.map((daySchedule: DaySchedule) => (
           <Card key={daySchedule.dayOfWeek} className="w-full">
             <CardHeader>
               <CardTitle>{daySchedule.dayOfWeek}</CardTitle>

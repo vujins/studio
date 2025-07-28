@@ -33,23 +33,31 @@ const IngredientForm = ({ setOpen, ingredientToEdit }: { setOpen: (open: boolean
   const [unit, setUnit] = useState(ingredientToEdit?.unit || '');
   const [market, setMarket] = useState(ingredientToEdit?.market || '');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name && unit && market) {
-      if (ingredientToEdit) {
-        updateIngredient({ ...ingredientToEdit, name, unit, market });
+      try {
+        if (ingredientToEdit) {
+          await updateIngredient({ ...ingredientToEdit, name, unit, market });
+          toast({
+              title: 'Ingredient Updated!',
+              description: `${name} has been updated.`,
+          })
+        } else {
+          await addIngredient({ name, unit, market });
+          toast({
+              title: 'Ingredient Added!',
+              description: `${name} has been added to your list.`,
+          })
+        }
+        setOpen(false);
+      } catch (error) {
         toast({
-            title: 'Ingredient Updated!',
-            description: `${name} has been updated.`,
-        })
-      } else {
-        addIngredient({ name, unit, market });
-        toast({
-            title: 'Ingredient Added!',
-            description: `${name} has been added to your list.`,
+            title: 'Error',
+            description: 'Could not save ingredient. Please try again.',
+            variant: 'destructive',
         })
       }
-      setOpen(false);
     } else {
         toast({
             title: 'Error',
@@ -103,13 +111,21 @@ const IngredientsPage = () => {
     setOpen(true);
   }
 
-  const handleDelete = (ingredient: Ingredient) => {
+  const handleDelete = async (ingredient: Ingredient) => {
     if (window.confirm(`Are you sure you want to delete ${ingredient.name}?`)) {
-      deleteIngredient(ingredient.id);
-      toast({
-        title: 'Ingredient Deleted',
-        description: `${ingredient.name} has been removed.`,
-      })
+      try {
+        await deleteIngredient(ingredient.id);
+        toast({
+          title: 'Ingredient Deleted',
+          description: `${ingredient.name} has been removed.`,
+        })
+      } catch (error) {
+        toast({
+            title: 'Error',
+            description: `Could not delete ${ingredient.name}. Please try again.`,
+            variant: 'destructive',
+        })
+      }
     }
   }
 
