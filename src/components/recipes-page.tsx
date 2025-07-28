@@ -87,11 +87,11 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
   const handleAddIngredient = () => {
     setRecipeIngredients([...recipeIngredients, { ingredientId: '', quantity: 0 }]);
   };
-  
+
   const handleRemoveIngredient = (index: number) => {
     setRecipeIngredients(recipeIngredients.filter((_, i) => i !== index));
   };
-  
+
   const handleIngredientChange = (index: number, field: keyof RecipeIngredient, value: string | number) => {
     const newIngredients = [...recipeIngredients];
     if (field === 'quantity' && typeof value === 'number') {
@@ -105,8 +105,8 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (recipeName && recipeIngredients.length > 0 && recipeIngredients.every(ing => ing.ingredientId && ing.quantity > 0)) {
-      const recipeData = { 
-        name: recipeName, 
+      const recipeData = {
+        name: recipeName,
         description,
         cookingTime,
         difficulty,
@@ -154,27 +154,27 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                         <h3 className="text-lg font-semibold text-gray-900">Recipe Details</h3>
                     </div>
                     <Separator />
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="recipe-name" className="text-sm font-medium">Recipe Name *</Label>
-                            <Input 
-                                id="recipe-name" 
-                                value={recipeName} 
-                                onChange={e => setRecipeName(e.target.value)} 
+                            <Input
+                                id="recipe-name"
+                                value={recipeName}
+                                onChange={e => setRecipeName(e.target.value)}
                                 placeholder="e.g., Mediterranean Quinoa Salad"
                                 className="transition-all focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="cooking-time" className="text-sm font-medium">Cooking Time (minutes)</Label>
-                            <Input 
-                                id="cooking-time" 
-                                type="number" 
+                            <Input
+                                id="cooking-time"
+                                type="number"
                                 min="0"
                                 max="999"
-                                value={cookingTime || ''} 
-                                onChange={e => setCookingTime(Number(e.target.value))} 
+                                value={cookingTime || ''}
+                                onChange={e => setCookingTime(Number(e.target.value))}
                                 placeholder="30"
                                 className="transition-all focus:ring-2 focus:ring-blue-500"
                             />
@@ -204,10 +204,10 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
 
                     <div className="space-y-2">
                         <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                        <Textarea 
-                            id="description" 
-                            value={description} 
-                            onChange={e => setDescription(e.target.value)} 
+                        <Textarea
+                            id="description"
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
                             placeholder="A delicious and healthy recipe that's perfect for..."
                             className="min-h-[80px] transition-all focus:ring-2 focus:ring-blue-500"
                             maxLength={500}
@@ -215,7 +215,7 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                         <p className="text-xs text-gray-500">{description.length}/500 characters</p>
                     </div>
                 </div>
-                
+
                 {/* Ingredients Section */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -228,7 +228,7 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                         </Badge>
                     </div>
                     <Separator />
-                    
+
                     <div className="space-y-3">
                         {recipeIngredients.map((ing, index) => {
                             const ingredientDetails = getIngredientById(ing.ingredientId);
@@ -237,7 +237,7 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                                     <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] items-end gap-3">
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium">Ingredient</Label>
-                                            <IngredientCombobox 
+                                            <IngredientCombobox
                                                 ingredients={ingredients}
                                                 value={ing.ingredientId}
                                                 onChange={(val) => handleIngredientChange(index, 'ingredientId', val)}
@@ -246,7 +246,7 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium">Quantity</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input 
+                                                <Input
                                                     type="number"
                                                     min="0"
                                                     step="0.1"
@@ -261,10 +261,10 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                                             </div>
                                         </div>
                                         <div className="flex items-end h-10">
-                                            <Button 
-                                                type="button" 
-                                                variant="ghost" 
-                                                size="sm" 
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={() => handleRemoveIngredient(index)}
                                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                             >
@@ -276,17 +276,17 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                             );
                         })}
                     </div>
-                    
+
                     {recipeIngredients.length === 0 && (
                         <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                             <p className="text-gray-500 mb-3">No ingredients added yet</p>
                         </div>
                     )}
-                    
-                    <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={handleAddIngredient} 
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddIngredient}
                         className="w-full border-dashed border-green-300 text-green-700 hover:border-green-400 hover:bg-green-50"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
@@ -294,13 +294,13 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                 </div>
             </div>
         </ScrollArea>
-        
+
         <DialogFooter className="pt-6 border-t">
             <DialogClose asChild>
                 <Button type="button" variant="outline">Cancel</Button>
             </DialogClose>
-            <Button 
-                type="submit" 
+            <Button
+                type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={!recipeName || recipeIngredients.length === 0 || recipeIngredients.some(ing => !ing.ingredientId || ing.quantity <= 0)}
             >
@@ -340,7 +340,7 @@ const RecipesPage = () => {
             })
         }
     };
-    
+
     const handleOpenChange = (isOpen: boolean) => {
         setOpen(isOpen);
         if (!isOpen) {
@@ -418,7 +418,7 @@ const RecipesPage = () => {
                         </Select>
                     </div>
                 )}
-                
+
                 {/* Recipes Grid */}
                 {filteredRecipes.length > 0 ? (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -435,9 +435,9 @@ const RecipesPage = () => {
                                             </CardDescription>
                                         </div>
                                         <div className="flex gap-1 ml-2">
-                                            <Button 
-                                                variant="ghost" 
-                                                size="sm" 
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={() => handleEdit(recipe)}
                                                 className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
                                             >
@@ -445,8 +445,8 @@ const RecipesPage = () => {
                                             </Button>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button 
-                                                        variant="ghost" 
+                                                    <Button
+                                                        variant="ghost"
                                                         size="sm"
                                                         className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-red-600 hover:text-red-700"
                                                     >
@@ -462,7 +462,7 @@ const RecipesPage = () => {
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction 
+                                                        <AlertDialogAction
                                                             onClick={() => handleDelete(recipe)}
                                                             className="bg-red-600 hover:bg-red-700"
                                                         >
@@ -474,7 +474,7 @@ const RecipesPage = () => {
                                         </div>
                                     </div>
                                 </CardHeader>
-                                
+
                                 <CardContent className="flex-grow space-y-4">
                                     {/* Recipe Info */}
                                     <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -482,14 +482,14 @@ const RecipesPage = () => {
                                             <Clock className="w-4 h-4" />
                                             <span>{recipe.cookingTime || '?'} min</span>
                                         </div>
-                                        <Badge 
-                                            variant="outline" 
+                                        <Badge
+                                            variant="outline"
                                             className={`text-xs ${difficultyColors[recipe.difficulty as keyof typeof difficultyColors] || 'bg-gray-100 text-gray-800'}`}
                                         >
                                             {recipe.difficulty}
                                         </Badge>
                                     </div>
-                                    
+
                                     {/* Ingredients Preview */}
                                     <div>
                                         <h4 className="font-medium text-sm mb-2 text-gray-900">
@@ -543,8 +543,8 @@ const RecipesPage = () => {
                                 <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
                                 <h3 className="font-medium text-gray-900 mb-2">No recipes found</h3>
                                 <p className="text-sm">Try adjusting your search or filter criteria.</p>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="mt-4"
                                     onClick={() => {
                                         setSearchTerm('');
@@ -557,7 +557,7 @@ const RecipesPage = () => {
                         </CardContent>
                     </Card>
                 )}
-                
+
                 {/* Enhanced Dialog */}
                 <DialogContent className="sm:max-w-3xl max-h-[90vh]">
                     <DialogHeader>

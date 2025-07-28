@@ -211,7 +211,7 @@ const SchedulePage = () => {
         {DAYS_OF_WEEK.map(day => {
           const daySchedule = schedule.find(ds => ds.dayOfWeek === day);
           const mealsPlannedForDay = daySchedule?.meals.filter(meal => meal.recipeId).length || 0;
-          
+
           return (
             <Card key={day} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
