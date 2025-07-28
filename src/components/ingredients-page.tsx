@@ -21,29 +21,35 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useAppContext } from '@/context/app-context';
 import { useToast } from '@/hooks/use-toast';
+import type { Ingredient } from '@/lib/types';
 
-const AddIngredientForm = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
-  const { addIngredient } = useAppContext();
+const IngredientForm = ({ setOpen, ingredientToEdit }: { setOpen: (open: boolean) => void; ingredientToEdit?: Ingredient | null; }) => {
+  const { addIngredient, updateIngredient } = useAppContext();
   const { toast } = useToast();
-  const [name, setName] = useState('');
-  const [unit, setUnit] = useState('');
-  const [market, setMarket] = useState('');
+  const [name, setName] = useState(ingredientToEdit?.name || '');
+  const [unit, setUnit] = useState(ingredientToEdit?.unit || '');
+  const [market, setMarket] = useState(ingredientToEdit?.market || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name && unit && market) {
-      addIngredient({ name, unit, market });
-      toast({
-          title: 'Ingredient Added!',
-          description: `${name} has been added to your list.`,
-      })
+      if (ingredientToEdit) {
+        updateIngredient({ ...ingredientToEdit, name, unit, market });
+        toast({
+            title: 'Ingredient Updated!',
+            description: `${name} has been updated.`,
+        })
+      } else {
+        addIngredient({ name, unit, market });
+        toast({
+            title: 'Ingredient Added!',
+            description: `${name} has been added to your list.`,
+        })
+      }
       setOpen(false);
-      setName('');
-      setUnit('');
-      setMarket('');
     } else {
         toast({
             title: 'Error',
@@ -87,55 +93,88 @@ const AddIngredientForm = ({ setOpen }: { setOpen: (open: boolean) => void }) =>
 
 
 const IngredientsPage = () => {
-  const { ingredients } = useAppContext();
+  const { ingredients, deleteIngredient } = useAppContext();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+
+  const handleEdit = (ingredient: Ingredient) => {
+    setEditingIngredient(ingredient);
+    setOpen(true);
+  }
+
+  const handleDelete = (ingredient: Ingredient) => {
+    if (window.confirm(`Are you sure you want to delete ${ingredient.name}?`)) {
+      deleteIngredient(ingredient.id);
+      toast({
+        title: 'Ingredient Deleted',
+        description: `${ingredient.name} has been removed.`,
+      })
+    }
+  }
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setEditingIngredient(null);
+    }
+  }
 
   return (
     <div className="container mx-auto">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Your Ingredients</CardTitle>
-          <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Your Ingredients</CardTitle>
             <DialogTrigger asChild>
               <Button style={{backgroundColor: 'var(--accent)', color: 'var(--accent-foreground)'}}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add a New Ingredient</DialogTitle>
-              </DialogHeader>
-              <AddIngredientForm setOpen={setOpen} />
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Market</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ingredients.length > 0 ? (
-                ingredients.map((ingredient) => (
-                  <TableRow key={ingredient.id}>
-                    <TableCell className="font-medium">{ingredient.name}</TableCell>
-                    <TableCell>{ingredient.unit}</TableCell>
-                    <TableCell>{ingredient.market}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24">No ingredients yet. Add one to get started!</TableCell>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Market</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {ingredients.length > 0 ? (
+                  ingredients.map((ingredient) => (
+                    <TableRow key={ingredient.id}>
+                      <TableCell className="font-medium">{ingredient.name}</TableCell>
+                      <TableCell>{ingredient.unit}</TableCell>
+                      <TableCell>{ingredient.market}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(ingredient)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(ingredient)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">No ingredients yet. Add one to get started!</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingIngredient ? 'Edit Ingredient' : 'Add a New Ingredient'}</DialogTitle>
+          </DialogHeader>
+          <IngredientForm setOpen={setOpen} ingredientToEdit={editingIngredient} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

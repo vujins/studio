@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { Ingredient, Recipe, WeeklySchedule, DaySchedule, DayOfWeek, Meal, RecipeIngredient } from '@/lib/types';
+import type { Ingredient, Recipe, WeeklySchedule, DaySchedule, DayOfWeek, Meal, RecipeIngredient, MealType } from '@/lib/types';
 import { DAYS_OF_WEEK, MEAL_TYPES } from '@/lib/types';
 
 // --- INITIAL MOCK DATA ---
@@ -65,8 +65,12 @@ interface AppContextType {
   recipes: Recipe[];
   schedule: WeeklySchedule;
   addIngredient: (ingredient: Omit<Ingredient, 'id'>) => void;
+  updateIngredient: (ingredient: Ingredient) => void;
+  deleteIngredient: (ingredientId: string) => void;
   addRecipe: (recipe: Omit<Recipe, 'id'>) => void;
-  updateSchedule: (day: DayOfWeek, mealType: string, recipeId: string | null) => void;
+  updateRecipe: (recipe: Recipe) => void;
+  deleteRecipe: (recipeId: string) => void;
+  updateSchedule: (day: DayOfWeek, mealType: MealType, recipeId: string | null) => void;
   getIngredientById: (id: string) => Ingredient | undefined;
   getRecipeById: (id: string) => Recipe | undefined;
 }
@@ -82,12 +86,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addIngredient = (ingredient: Omit<Ingredient, 'id'>) => {
     setIngredients(prev => [...prev, { ...ingredient, id: new Date().toISOString() }]);
   };
+  
+  const updateIngredient = (ingredient: Ingredient) => {
+    setIngredients(prev => prev.map(i => i.id === ingredient.id ? ingredient : i));
+  }
+
+  const deleteIngredient = (ingredientId: string) => {
+    setIngredients(prev => prev.filter(i => i.id !== ingredientId));
+    // Also remove this ingredient from any recipes that use it.
+    setRecipes(prevRecipes => prevRecipes.map(r => ({
+      ...r,
+      ingredients: r.ingredients.filter(i => i.ingredientId !== ingredientId)
+    })))
+  }
 
   const addRecipe = (recipe: Omit<Recipe, 'id'>) => {
     setRecipes(prev => [...prev, { ...recipe, id: new Date().toISOString() }]);
   };
 
-  const updateSchedule = (day: DayOfWeek, mealType: string, recipeId: string | null) => {
+  const updateRecipe = (recipe: Recipe) => {
+    setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r));
+  }
+
+  const deleteRecipe = (recipeId: string) => {
+    setRecipes(prev => prev.filter(r => r.id !== recipeId));
+    // Also remove this recipe from the schedule
+    setSchedule(prevSchedule => prevSchedule.map(daySchedule => ({
+      ...daySchedule,
+      meals: daySchedule.meals.map(meal => meal.recipeId === recipeId ? { ...meal, recipeId: null } : meal)
+    })));
+  }
+
+  const updateSchedule = (day: DayOfWeek, mealType: MealType, recipeId: string | null) => {
     setSchedule(prevSchedule =>
       prevSchedule.map(daySchedule =>
         daySchedule.dayOfWeek === day
@@ -111,7 +141,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     recipes,
     schedule,
     addIngredient,
+    updateIngredient,
+    deleteIngredient,
     addRecipe,
+    updateRecipe,
+    deleteRecipe,
     updateSchedule,
     getIngredientById,
     getRecipeById,

@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShoppingCart, Zap, Loader2, RefreshCw } from 'lucide-react';
+import { ShoppingCart, RefreshCw, Loader2 } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox"
 import { useAppContext } from '@/context/app-context';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 type ShoppingListItem = {
     name: string;
@@ -121,11 +123,14 @@ const ShoppingListPage = () => {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <ul className="space-y-2">
+                                <ul className="space-y-3">
                                     {items.map((item, index) => (
-                                        <li key={index} className="flex justify-between items-center border-b pb-1">
-                                            <span>{item.name}</span>
-                                            <span className="font-mono text-sm bg-muted px-2 py-1 rounded-md">{item.quantity} {item.unit}</span>
+                                        <li key={index} className="flex items-center space-x-3">
+                                            <Checkbox id={`${market}-${item.name}`} />
+                                            <Label htmlFor={`${market}-${item.name}`} className="flex justify-between items-center w-full">
+                                                <span>{item.name}</span>
+                                                <span className="font-mono text-sm bg-muted px-2 py-1 rounded-md">{item.quantity} {item.unit}</span>
+                                            </Label>
                                         </li>
                                     ))}
                                 </ul>
