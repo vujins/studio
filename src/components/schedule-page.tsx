@@ -10,6 +10,8 @@ import { ChevronsUpDown, Check, PlusCircle } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { MEAL_TYPES, DAYS_OF_WEEK } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 const RecipeCombobox = ({ day, mealType, recipeId }: { day: DayOfWeek, mealType: MealType, recipeId: string | null }) => {
     const { recipes, updateSchedule, getRecipeById } = useAppContext();
@@ -96,50 +98,84 @@ const RecipeCombobox = ({ day, mealType, recipeId }: { day: DayOfWeek, mealType:
 
 
 const SchedulePage = () => {
-  const { schedule, getRecipeById } = useAppContext();
+  const { schedule } = useAppContext();
 
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold font-headline">Weekly Meal Schedule</h1>
       </div>
-      <Card>
-        <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="p-4 text-left font-medium text-muted-foreground w-1/6"></th>
-                    {DAYS_OF_WEEK.map(day => (
-                      <th key={day} className="p-4 text-center font-medium text-muted-foreground">{day}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {MEAL_TYPES.map(mealType => (
-                    <tr key={mealType} className="border-b">
-                      <td className="p-4 font-medium text-muted-foreground align-top w-1/6">{mealType}</td>
-                      {DAYS_OF_WEEK.map(day => {
-                        const daySchedule = schedule.find(ds => ds.dayOfWeek === day);
-                        const meal = daySchedule?.meals.find(m => m.mealType === mealType);
-                        
-                        return (
-                          <td key={`${day}-${mealType}`} className="p-2 align-top">
-                            <RecipeCombobox 
-                                day={day}
-                                mealType={mealType}
-                                recipeId={meal?.recipeId || null}
-                            />
-                          </td>
-                        )
-                      })}
+        {/* Desktop View */}
+        <Card className="hidden md:block">
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead>
+                    <tr className="border-b">
+                        <th className="p-4 text-left font-medium text-muted-foreground w-1/6"></th>
+                        {DAYS_OF_WEEK.map(day => (
+                        <th key={day} className="p-4 text-center font-medium text-muted-foreground">{day}</th>
+                        ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-          </div>
-        </CardContent>
-      </Card>
+                    </thead>
+                    <tbody>
+                    {MEAL_TYPES.map(mealType => (
+                        <tr key={mealType} className="border-b">
+                        <td className="p-4 font-medium text-muted-foreground align-top w-1/6">{mealType}</td>
+                        {DAYS_OF_WEEK.map(day => {
+                            const daySchedule = schedule.find(ds => ds.dayOfWeek === day);
+                            const meal = daySchedule?.meals.find(m => m.mealType === mealType);
+                            
+                            return (
+                            <td key={`${day}-${mealType}`} className="p-2 align-top">
+                                <RecipeCombobox 
+                                    day={day}
+                                    mealType={mealType}
+                                    recipeId={meal?.recipeId || null}
+                                />
+                            </td>
+                            )
+                        })}
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
+            </CardContent>
+        </Card>
+        {/* Mobile View */}
+        <div className="md:hidden">
+            <Accordion type="single" collapsible className="w-full" defaultValue={DAYS_OF_WEEK[0]}>
+                {DAYS_OF_WEEK.map(day => {
+                    const daySchedule = schedule.find(ds => ds.dayOfWeek === day);
+                    return (
+                    <AccordionItem value={day} key={day}>
+                        <AccordionTrigger>{day}</AccordionTrigger>
+                        <AccordionContent>
+                           <div className="space-y-4">
+                            {MEAL_TYPES.map(mealType => {
+                                const meal = daySchedule?.meals.find(m => m.mealType === mealType);
+                                return (
+                                <div key={mealType} className="grid grid-cols-3 items-center gap-2">
+                                    <Label className="text-muted-foreground text-right">{mealType}</Label>
+                                    <div className="col-span-2">
+                                        <RecipeCombobox 
+                                            day={day}
+                                            mealType={mealType}
+                                            recipeId={meal?.recipeId || null}
+                                        />
+                                    </div>
+                                </div>
+                                )
+                            })}
+                           </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                    )
+                })}
+            </Accordion>
+        </div>
+
     </div>
   );
 };
