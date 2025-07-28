@@ -112,7 +112,7 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
           <Label htmlFor="description">
             Description
           </Label>
-          <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" placeholder="A short description of the recipe" />
+          <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A short description of the recipe" />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="cooking-time" className="text-right">
