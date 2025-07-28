@@ -1,79 +1,145 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useAppContext } from '@/context/app-context';
-import type { DayOfWeek, MealType, DaySchedule } from '@/lib/types';
+import type { DayOfWeek, MealType, Recipe } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { ChevronsUpDown, Check, PlusCircle } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { MEAL_TYPES, DAYS_OF_WEEK } from '@/lib/types';
+
+const RecipeCombobox = ({ day, mealType, recipeId }: { day: DayOfWeek, mealType: MealType, recipeId: string | null }) => {
+    const { recipes, updateSchedule, getRecipeById } = useAppContext();
+    const { toast } = useToast();
+    const [open, setOpen] = useState(false);
+
+    const handleRecipeChange = async (newRecipeId: string | null) => {
+        setOpen(false);
+        if (newRecipeId === recipeId) return;
+
+        try {
+            await updateSchedule(day, mealType, newRecipeId);
+            toast({
+                title: "Schedule Updated",
+                description: `${mealType} on ${day} has been updated.`,
+            });
+        } catch(error) {
+            toast({
+                title: "Error",
+                description: `Could not update schedule. Please try again.`,
+                variant: "destructive",
+            });
+        }
+    };
+
+    const selectedRecipe = recipeId ? getRecipeById(recipeId) : null;
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between text-left h-auto py-1 px-2"
+                >
+                    <span className="truncate">
+                        {selectedRecipe ? selectedRecipe.name : "Select a recipe"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+                <Command>
+                    <CommandInput placeholder="Search recipe..." />
+                    <CommandList>
+                        <CommandEmpty>No recipe found.</CommandEmpty>
+                        <CommandGroup>
+                             <CommandItem
+                                onSelect={() => handleRecipeChange(null)}
+                                className="cursor-pointer"
+                            >
+                                <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        !recipeId ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                                <span className="text-muted-foreground">None</span>
+                            </CommandItem>
+                            {recipes.map((recipe) => (
+                                <CommandItem
+                                    key={recipe.id}
+                                    value={recipe.name}
+                                    onSelect={() => handleRecipeChange(recipe.id)}
+                                     className="cursor-pointer"
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            recipeId === recipe.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                    {recipe.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
 
 const SchedulePage = () => {
-  const { schedule, recipes, updateSchedule } = useAppContext();
-  const { toast } = useToast();
-
-  const handleRecipeChange = async (day: DayOfWeek, mealType: MealType, recipeId: string) => {
-    const newRecipeId = recipeId === 'none' ? null : recipeId;
-    try {
-        await updateSchedule(day, mealType, newRecipeId);
-        toast({
-            title: "Schedule Updated",
-            description: `${mealType} on ${day} has been updated.`,
-        })
-    } catch(error) {
-        toast({
-            title: "Error",
-            description: `Could not update schedule. Please try again.`,
-            variant: "destructive",
-        })
-    }
-  };
+  const { schedule, getRecipeById } = useAppContext();
 
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold font-headline">Weekly Meal Schedule</h1>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {schedule.map((daySchedule: DaySchedule) => (
-          <Card key={daySchedule.dayOfWeek} className="w-full">
-            <CardHeader>
-              <CardTitle>{daySchedule.dayOfWeek}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {daySchedule.meals.map((meal) => (
-                  <div key={meal.mealType} className="space-y-1">
-                    <p className="font-medium text-sm text-muted-foreground">{meal.mealType}</p>
-                    <Select
-                      value={meal.recipeId || 'none'}
-                      onValueChange={(value) => handleRecipeChange(daySchedule.dayOfWeek, meal.mealType, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a recipe" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">
-                            <span className="text-muted-foreground">None</span>
-                        </SelectItem>
-                        {recipes.map((recipe) => (
-                          <SelectItem key={recipe.id} value={recipe.id}>
-                            {recipe.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="p-4 text-left font-medium text-muted-foreground w-1/6"></th>
+                    {DAYS_OF_WEEK.map(day => (
+                      <th key={day} className="p-4 text-center font-medium text-muted-foreground">{day}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {MEAL_TYPES.map(mealType => (
+                    <tr key={mealType} className="border-b">
+                      <td className="p-4 font-medium text-muted-foreground align-top w-1/6">{mealType}</td>
+                      {DAYS_OF_WEEK.map(day => {
+                        const daySchedule = schedule.find(ds => ds.dayOfWeek === day);
+                        const meal = daySchedule?.meals.find(m => m.mealType === mealType);
+                        
+                        return (
+                          <td key={`${day}-${mealType}`} className="p-2 align-top">
+                            <RecipeCombobox 
+                                day={day}
+                                mealType={mealType}
+                                recipeId={meal?.recipeId || null}
+                            />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
