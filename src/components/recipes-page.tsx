@@ -5,15 +5,67 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { PlusCircle, Trash2, Edit, Clock, BarChart } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlusCircle, Trash2, Edit, Clock, BarChart, ChevronsUpDown, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useAppContext } from '@/context/app-context';
-import type { Recipe, RecipeIngredient, RecipeDifficulty } from '@/lib/types';
+import type { Recipe, RecipeIngredient, RecipeDifficulty, Ingredient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { RECIPE_DIFFICULTIES } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+
+
+const IngredientCombobox = ({ value, onChange, ingredients }: { value: string, onChange: (value: string) => void, ingredients: Ingredient[] }) => {
+    const [open, setOpen] = useState(false);
+    const selectedIngredient = ingredients.find(i => i.id === value);
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                >
+                    {selectedIngredient ? selectedIngredient.name : "Select ingredient..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="p-0">
+                <Command>
+                    <CommandInput placeholder="Search ingredient..." />
+                    <CommandList>
+                        <CommandEmpty>No ingredient found.</CommandEmpty>
+                        <CommandGroup>
+                            {ingredients.map((ingredient) => (
+                                <CommandItem
+                                    key={ingredient.id}
+                                    value={ingredient.name}
+                                    onSelect={() => {
+                                        onChange(ingredient.id);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            value === ingredient.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                    {ingredient.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 
 const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => void, recipeToEdit?: Recipe | null }) => {
@@ -109,16 +161,18 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                     <h3 className="text-lg font-medium">Recipe Details</h3>
                     <Separator />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="recipe-name">Recipe Name</Label>
-                        <Input id="recipe-name" value={recipeName} onChange={e => setRecipeName(e.target.value)} placeholder="e.g., Healthy Salad" />
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="recipe-name">Recipe Name</Label>
+                            <Input id="recipe-name" value={recipeName} onChange={e => setRecipeName(e.target.value)} placeholder="e.g., Healthy Salad" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="cooking-time">Time (mins)</Label>
+                            <Input id="cooking-time" type="number" value={cookingTime || ''} onChange={e => setCookingTime(Number(e.target.value))} placeholder="e.g., 30" />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cooking-time">Time (mins)</Label>
-                        <Input id="cooking-time" type="number" value={cookingTime || ''} onChange={e => setCookingTime(Number(e.target.value))} placeholder="e.g., 30" />
-                    </div>
-                    <div className="space-y-2">
+                     <div className="space-y-2">
                         <Label htmlFor="difficulty">Difficulty</Label>
                         <Select onValueChange={(val: RecipeDifficulty) => setDifficulty(val)} value={difficulty}>
                             <SelectTrigger>
@@ -129,10 +183,10 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                             </SelectContent>
                         </Select>
                     </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A short description of the recipe" />
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="A short description of the recipe" />
+                    </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -145,14 +199,11 @@ const RecipeForm = ({ setOpen, recipeToEdit }: { setOpen: (open: boolean) => voi
                             <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] items-end gap-2 p-2 border rounded-md relative">
                                 <div className="space-y-2">
                                     <Label>Ingredient</Label>
-                                    <Select onValueChange={(val) => handleIngredientChange(index, 'ingredientId', val)} value={ing.ingredientId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select ingredient" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {ingredients.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                    <IngredientCombobox 
+                                        ingredients={ingredients}
+                                        value={ing.ingredientId}
+                                        onChange={(val) => handleIngredientChange(index, 'ingredientId', val)}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Qty</Label>
@@ -299,5 +350,3 @@ const RecipesPage = () => {
 };
 
 export default RecipesPage;
-
-    
