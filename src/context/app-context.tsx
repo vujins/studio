@@ -97,7 +97,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setRecipes(prevRecipes => prevRecipes.map(r => ({
       ...r,
       ingredients: r.ingredients.filter(i => i.ingredientId !== ingredientId)
-    })))
+    })));
   }
 
   const addRecipe = (recipe: Omit<Recipe, 'id'>) => {
