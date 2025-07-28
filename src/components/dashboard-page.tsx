@@ -37,7 +37,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ setActivePage }) => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline text-gray-800">Welcome to MealPrep Master</h1>
+        <h1 className="text-3xl font-bold font-headline text-gray-800">Welcome to Badger's Shopping List</h1>
         <p className="text-lg text-muted-foreground mt-1">Your personal assistant for meal planning and grocery shopping.</p>
       </div>
 

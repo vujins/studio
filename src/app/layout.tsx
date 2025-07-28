@@ -4,8 +4,8 @@ import { AppProvider } from '@/context/app-context';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'MealPrep Master',
-  description: 'Plan your meals, master your life.',
+  title: "Badger's Shopping List",
+  description: 'Your personal shopping list assistant.',
 };
 
 export default function RootLayout({
